@@ -72,28 +72,40 @@ class Controller_Welcome extends Controller {
 	}
 
 	public function action_add_profile(){
-		$post = $this->request->post();
-		$client = ORM::factory('User');
-		$session = Session::instance();
-		// print_r($client->create_profile($post));
-		$arr[0]=$session->get('id');
-		$arr[1]=$post['address'];
-		$result=$client->create_profile($arr);
-		if($result[0]){
-			$this->response->body('Profile Created successfully');
+		if (Auth::instance()->logged_in()){
+			$post = $this->request->post();
+			$client = ORM::factory('User');
+			$session = Session::instance();
+			// print_r($client->create_profile($post));
+			$arr[0]=$session->get('id');
+			$arr[1]=$post['address'];
+			$result=$client->create_profile($arr);
+			if($result[0]){
+				$this->response->body('Profile Created successfully');
+			}else{
+				$this->response->body('Profile Cannot be created.');
+			}
 		}else{
-			$this->response->body('Profile Cannot be created.');
+			$this->response->body('You are not logged in please log in');
 		}
+
 	}
 
 	public function action_get_profile(){
-		$client = ORM::factory('User');
-		$session = Session::instance();
-		$result=$client->get_profile($session->get('id'));
-		if($result){
-			$this->response->body("username=>".$session->get('id')." <br> address=>".$result[0]['address']);
-		}else
-			$this->response->body("NO profile data entered");
+
+		if (Auth::instance()->logged_in()){
+			$client = ORM::factory('User');
+			$user = Auth::instance()->get_user();
+			$session = Session::instance();
+			$result=$client->get_profile($session->get('id'));
+			if($result){
+				$this->response->body("user_id=>".$session->get('id')." <br>username=>".$user->username."  <br> address=>".$result[0]['address']);
+			}else
+				$this->response->body("NO profile data entered");
+			
+		}else{
+			$this->response->body('You are not logged in please log in');
+		}
 		
 	}
 } 
