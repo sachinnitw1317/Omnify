@@ -14,7 +14,7 @@ class Controller_Welcome extends Controller {
 		$post = $this->request->post();
 		$client = ORM::factory('User');
 		$client->email = $post['email'];
-		$client->username = "sachin123";
+		$client->username = $post['email'];
 		$client->password = $post['password'];
 		
 		if($client->save()){
@@ -26,19 +26,19 @@ class Controller_Welcome extends Controller {
 
 		// Handled from a form with inputs with names email / password
 		$post = $this->request->post();
-		print_r($post);
-		$success= Auth::instance()->login($post['email'],$post['password'],false);
-		
-		// echo Auth::instance()->hash_password($post['password'])."\n";
-		// echo Auth::instance()->hash_password("sachin123");
-		 
-		if ($success)
-		{
-		    $this->response->body('login successfull');
-		}
-		else
-		{
-		    $this->response->body('Login Failed');
+		$session = Session::instance();
+		if($post){
+			print_r($post);
+			$success= Auth::instance()->login($post['email'],$post['password'],false);
+			$session->set('id', Auth::instance()->get_user()); 
+			if ($success)
+			{
+			    $this->response->body('login successfull');
+			}
+			else
+			{
+			    $this->response->body('Login Failed');
+			}
 		}
 		 // $this->response->body('Login Failed');
 	}
@@ -52,7 +52,7 @@ class Controller_Welcome extends Controller {
 		 	 
 		 	if ($user !== null)
 		 	{
-		    	$this->response->body($user);	 	    
+		    	$this->response->body($user->username);	 	    
 		 	}
 		 	else
 		 	{
@@ -61,12 +61,39 @@ class Controller_Welcome extends Controller {
 		}
 		else
 		{
-		     $this->action_login();
+		    $this->response->body('not Logged in');
 		}
 	}
 	public function action_logout(){
 		Auth::instance()->logout();
+		$session = Session::instance();
+		$session->delete('id');
 		$this->response->body('Logged out successfully');
-				
+	}
+
+	public function action_add_profile(){
+		$post = $this->request->post();
+		$client = ORM::factory('User');
+		$session = Session::instance();
+		// print_r($client->create_profile($post));
+		$arr[0]=$session->get('id');
+		$arr[1]=$post['address'];
+		$result=$client->create_profile($arr);
+		if($result[0]){
+			$this->response->body('Profile Created successfully');
+		}else{
+			$this->response->body('Profile Cannot be created.');
+		}
+	}
+
+	public function action_get_profile(){
+		$client = ORM::factory('User');
+		$session = Session::instance();
+		$result=$client->get_profile($session->get('id'));
+		if($result){
+			$this->response->body("username=>".$session->get('id')." <br> address=>".$result[0]['address']);
+		}else
+			$this->response->body("NO profile data entered");
+		
 	}
 } 
